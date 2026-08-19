@@ -17,7 +17,7 @@ const campaignSchema = z.object({
   title: z.string().min(2).max(80),
   rationale: z.string().min(12).max(320),
   caption: z.string().min(20).max(2_200),
-  hashtags: z.array(z.string().regex(/^#/)).min(3).max(10),
+  hashtags: z.array(z.string().trim().regex(/^#[\p{L}\p{N}_]{2,40}$/u)).min(3).max(10),
   pieces: z.object({
     story: z.object({ eyebrow: z.string(), headline: z.string(), cta: z.string() }),
     carousel: z.array(z.object({ title: z.string(), body: z.string() })).length(3),
@@ -58,6 +58,9 @@ export async function POST(request: Request) {
         "O conceito deve funcionar como story, carrossel de exatamente 3 páginas e post.",
         "Preserve nomes de produtos, detalhes locais e chamadas para ação fornecidos pelo usuário.",
         "Nunca invente o nome da empresa, produtos, preços, condições, localização ou credenciais que não estejam no briefing.",
+        "Evite fórmulas gastas como feito com carinho, momento especial, do seu jeito, transforme sua rotina, experiência única, vem conferir, você merece e dar o primeiro passo.",
+        "Prefira benefícios e ações concretas sustentadas pelo briefing; quando faltar um detalhe, seja conciso em vez de preencher com abstrações.",
+        "Hashtags devem começar com um único # e conter somente letras, números ou underscore, sem espaços, hífens ou pontuação.",
       ].join(" "),
       prompt: [
         `Formato solicitado: ${format}.`,
