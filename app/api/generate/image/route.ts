@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const requestSchema = z.object({
-  prompt: z.string().trim().min(20).max(6_000),
+  prompt: z.string().trim().min(3).max(6_000),
   format: z.enum(["story", "carousel", "post"]),
 }).strict();
 
