@@ -20,7 +20,7 @@ async function runActor(actorId: string, input: Record<string, unknown>): Promis
       },
       body: JSON.stringify(input),
       cache: "no-store",
-      signal: AbortSignal.timeout(35_000),
+      signal: AbortSignal.timeout(90_000),
     },
   );
 
