@@ -18,7 +18,7 @@ export function ImageStudio() {
     if (!prompt.trim() || state === "working") return;
     setState("working");
     try {
-      const response = await fetch("/api/generate/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, format }) });
+      const response = await fetch("/api/generate/image", { method: "POST", headers: { "Content-Type": "application/json", ...(process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN ? { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN}` } : {}) }, body: JSON.stringify({ prompt, format }) });
       if (!response.ok) throw new Error("image unavailable");
     } catch {
       // The visual result remains a polished local preview while credentials are absent.

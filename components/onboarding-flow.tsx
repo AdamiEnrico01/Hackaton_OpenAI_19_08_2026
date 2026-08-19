@@ -18,7 +18,7 @@ export function OnboardingFlow() {
     setIngestStatus("loading");
     setIngestError("");
     try {
-      const response = await fetch("/api/brand/ingest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ websiteUrl: website.trim(), instagramUsername: instagram.trim().replace(/^@/, "") || undefined }) });
+      const response = await fetch("/api/brand/ingest", { method: "POST", headers: { "Content-Type": "application/json", ...(process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN ? { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN}` } : {}) }, body: JSON.stringify({ websiteUrl: website.trim(), instagramUsername: instagram.trim().replace(/^@/, "") || undefined }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Não foi possível analisar sua marca.");
       window.localStorage.setItem("cria-brand-analysis", JSON.stringify(result));
