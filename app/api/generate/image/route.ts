@@ -1,6 +1,7 @@
 import { generateImage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { protectPaidApi, readLimitedJson, safeErrorName } from "@/lib/security/api-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -8,10 +9,15 @@ export const maxDuration = 120;
 const requestSchema = z.object({
   prompt: z.string().trim().min(20).max(6_000),
   format: z.enum(["story", "carousel", "post"]),
-});
+}).strict();
 
 export async function POST(request: Request) {
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  const accessError = protectPaidApi(request);
+  if (accessError) return accessError;
+
+  const body = await readLimitedJson(request);
+  if (body.error) return body.error;
+  const parsed = requestSchema.safeParse(body.data);
   if (!parsed.success) {
     return NextResponse.json({ error: "Pedido de imagem inválido.", details: parsed.error.flatten() }, { status: 400 });
   }
@@ -42,7 +48,7 @@ export async function POST(request: Request) {
       usage: result.usage,
     });
   } catch (error) {
-    console.error("crIA image generation failed", error);
+    console.error("crIA image generation failed", { error: safeErrorName(error) });
     return NextResponse.json({ error: "Não foi possível gerar a imagem agora." }, { status: 502 });
   }
 }

@@ -47,6 +47,7 @@ CRIA_IMAGE_MODEL=openai/gpt-image-2
 APIFY_API_TOKEN=
 APIFY_WEBSITE_ACTOR=apify/website-content-crawler
 APIFY_INSTAGRAM_ACTOR=apify/instagram-profile-scraper
+CRIA_TEST_TOKEN=
 ```
 
 Execute [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor do projeto Supabase. As políticas RLS isolam os dados pelo `auth.uid()` do proprietário.
@@ -59,7 +60,7 @@ Execute [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor do projeto Su
 | `POST /api/generate/image` | Gera criativo 1:1 ou 9:16 com GPT Image 2. |
 | `POST /api/brand/ingest` | Coleta site/Instagram e produz o brandbook operacional. |
 
-As rotas validam entrada com Zod. A campanha mantém um fallback demonstrativo quando o Gateway está indisponível; a ingestão devolve as fontes coletadas quando só o Apify estiver configurado.
+As rotas validam entrada com Zod, limitam o tamanho do corpo e exigem `Authorization: Bearer <CRIA_TEST_TOKEN>` em ambientes hospedados. Sem credenciais do Gateway, a campanha usa o conteúdo demonstrativo; falhas de provedor durante uma geração live retornam erro explícito. A ingestão devolve as fontes coletadas quando só o Apify estiver configurado.
 
 ## Verificação
 

@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   availableAssets,
   formatMeta,
@@ -26,6 +33,34 @@ const navigation = [
 ];
 
 const mascotUrl = "https://raw.githubusercontent.com/AdamiEnrico01/Hackaton_OpenAI_19_08_2026/11216c62d3a47921e182adbacc1b92c58628e5ce/public/cria-mascot.png";
+
+function copyTextFallback(text: string) {
+  const textArea = document.createElement("textarea");
+  const activeElement = document.activeElement;
+
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.inset = "0 auto auto -9999px";
+  textArea.style.opacity = "0";
+  textArea.style.pointerEvents = "none";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, text.length);
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch {
+    copied = false;
+  } finally {
+    textArea.remove();
+    if (activeElement instanceof HTMLElement) activeElement.focus({ preventScroll: true });
+  }
+
+  return copied;
+}
 
 function AssetPill({ asset, onRemove }: { asset: BrandAsset; onRemove?: () => void }) {
   return (
@@ -93,11 +128,68 @@ export function CriaStudio() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [zoom, setZoom] = useState(72);
   const [notice, setNotice] = useState("");
+  const mobileNavRef = useRef<HTMLElement>(null);
+  const mobileNavToggleRef = useRef<HTMLButtonElement>(null);
 
   const remainingAssets = useMemo(
     () => availableAssets.filter((candidate) => !assets.some((asset) => asset.id === candidate.id)),
     [assets],
   );
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const bodyPaddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+    const mobileNav = mobileNavRef.current;
+    const navToggle = mobileNavToggleRef.current;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${bodyPaddingRight + scrollbarWidth}px`;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      mobileNav?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    });
+
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileNavOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusableElements = Array.from(
+        mobileNav?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+      );
+      if (!focusableElements.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.paddingRight = previousBodyPaddingRight;
+      navToggle?.focus({ preventScroll: true });
+    };
+  }, [mobileNavOpen]);
 
   function selectFormat(nextFormat: ContentFormat) {
     setFormat(nextFormat);
@@ -112,8 +204,9 @@ export function CriaStudio() {
   }
 
   async function generateCampaign() {
-    if (!prompt.trim() || status === "generating") return;
+    if (prompt.trim().length < 12 || status === "generating") return;
     setStatus("generating");
+    setNotice("");
 
     try {
       const response = await fetch("/api/generate/campaign", {
@@ -122,28 +215,78 @@ export function CriaStudio() {
         body: JSON.stringify({ prompt, format, assetIds: assets.map((asset) => asset.id) }),
       });
 
-      if (response.ok) {
-        const result = (await response.json()) as { campaign?: CampaignResult };
-        if (result.campaign) setCampaign(result.campaign);
+      const result = (await response.json().catch(() => null)) as {
+        campaign?: CampaignResult;
+        error?: string;
+        mode?: string;
+      } | null;
+
+      if (!response.ok || !result?.campaign) {
+        const message = response.status === 401
+          ? "Geração live protegida durante os testes. A prévia demonstrativa continua disponível."
+          : result?.error ?? "Não foi possível gerar a campanha agora.";
+        throw new Error(message);
       }
-    } catch {
-      // The polished demo remains usable before external credentials are configured.
-    } finally {
+
+      setCampaign(result.campaign);
       setStatus("done");
+      setNotice(result.mode === "live" ? "Campanha gerada com IA e pronta para revisão." : "Campanha demonstrativa carregada.");
       setActivePreview(format === "post" ? "post" : format === "carousel" ? "carousel" : "story");
+    } catch (error) {
+      setStatus("ready");
+      setNotice(error instanceof Error ? error.message : "Não foi possível gerar a campanha agora.");
     }
   }
 
   async function copyCaption() {
-    await navigator.clipboard.writeText(`${campaign.caption}\n\n${campaign.hashtags.join(" ")}`);
-    setNotice("Legenda e hashtags copiadas.");
+    const text = `${campaign.caption}\n\n${campaign.hashtags.join(" ")}`;
+    let copied = false;
+
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      }
+    } catch {
+      copied = false;
+    }
+
+    if (!copied) copied = copyTextFallback(text);
+    setNotice(copied ? "Legenda e hashtags copiadas." : "Não foi possível copiar. Selecione a legenda e tente novamente.");
+  }
+
+  function handlePreviewTabKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+    const tabs = Array.from(
+      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)') ?? [],
+    );
+    const currentIndex = tabs.indexOf(event.currentTarget);
+    if (currentIndex < 0) return;
+
+    event.preventDefault();
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? tabs.length - 1
+        : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[nextIndex]?.focus();
+    tabs[nextIndex]?.click();
   }
 
   const visiblePreviews = format === "campaign" ? ["story", "carousel", "post"] : [format];
 
   return (
     <div className="cria-app-shell">
-      <aside className={`cria-sidebar ${mobileNavOpen ? "is-open" : ""}`} aria-label="Navegação principal">
+      {mobileNavOpen ? <button className="cria-nav-backdrop" type="button" onClick={() => setMobileNavOpen(false)} aria-label="Fechar menu" tabIndex={-1} /> : null}
+      <aside
+        ref={mobileNavRef}
+        id="cria-mobile-navigation"
+        className={`cria-sidebar ${mobileNavOpen ? "is-open" : ""}`}
+        aria-label="Navegação principal"
+        aria-modal={mobileNavOpen || undefined}
+        role={mobileNavOpen ? "dialog" : undefined}
+      >
         <div className="cria-brand-lockup">
           <span className="cria-logo-symbol"><i /><i /><i /></span>
           <span className="cria-wordmark">cr<span>IA</span><small>seu marketeiro favorito</small></span>
@@ -152,7 +295,10 @@ export function CriaStudio() {
         <nav className="cria-navigation">
           <span className="cria-nav-heading">Workspace</span>
           {navigation.map((item) => (
-            <button className={item.active ? "is-active" : ""} type="button" key={item.label}>
+            <button className={item.active ? "is-active" : ""} type="button" key={item.label} onClick={() => {
+              setMobileNavOpen(false);
+              if (!item.active) setNotice(`${item.label} estará disponível na próxima etapa do produto.`);
+            }}>
               <span aria-hidden="true">{item.icon}</span>{item.label}
               {item.active ? <i /> : null}
             </button>
@@ -168,7 +314,7 @@ export function CriaStudio() {
         <div className="cria-user">
           <span>EA</span>
           <div><strong>Empório Aurora</strong><small>Plano Essencial</small></div>
-          <button type="button" aria-label="Abrir opções do perfil">•••</button>
+          <button type="button" aria-label="Abrir opções do perfil" onClick={() => setNotice("Configurações de perfil estarão disponíveis após ativarmos o Supabase Auth.")}>•••</button>
         </div>
       </aside>
 
@@ -178,7 +324,7 @@ export function CriaStudio() {
             <span className="cria-logo-symbol"><i /><i /><i /></span>
             <span className="cria-wordmark">cr<span>IA</span></span>
           </div>
-          <button type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? "Fechar menu" : "Abrir menu"}>{mobileNavOpen ? "×" : "☰"}</button>
+          <button ref={mobileNavToggleRef} type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-expanded={mobileNavOpen} aria-controls="cria-mobile-navigation" aria-label={mobileNavOpen ? "Fechar menu" : "Abrir menu"}>{mobileNavOpen ? "×" : "☰"}</button>
         </header>
 
         <section className="cria-create-panel">
@@ -264,7 +410,7 @@ export function CriaStudio() {
               <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} aria-label="Descreva o conteúdo que deseja criar" />
               <div>
                 <span><i /> a crIA seguirá o brandbook</span>
-                <button type="button" onClick={generateCampaign} disabled={!prompt.trim() || status === "generating"}>
+                <button type="button" onClick={generateCampaign} disabled={prompt.trim().length < 12 || status === "generating"}>
                   {status === "generating" ? <><b className="cria-spinner" /> criando sua campanha...</> : status === "done" ? <>campanha pronta <b>✓</b></> : <>criar com a crIA <b>→</b></>}
                 </button>
               </div>
@@ -275,7 +421,7 @@ export function CriaStudio() {
         <aside className="cria-preview-panel" aria-label="Prévia da criação">
           <div className="cria-preview-header">
             <div><span>Prévia ao vivo</span><i /></div>
-            <button type="button" aria-label="Mais opções">•••</button>
+            <button type="button" aria-label="Mais opções" onClick={() => setNotice("Mais opções de exportação entrarão na próxima etapa.")}>•••</button>
           </div>
 
           <div className="cria-preview-title">
@@ -286,7 +432,7 @@ export function CriaStudio() {
 
           <div className="cria-preview-tabs" role="tablist" aria-label="Formatos da campanha">
             {(["story", "carousel", "post"] as const).map((tab) => (
-              <button type="button" role="tab" aria-selected={activePreview === tab} className={activePreview === tab ? "is-active" : ""} key={tab} onClick={() => setActivePreview(tab)} disabled={!visiblePreviews.includes(tab)}>
+              <button type="button" role="tab" id={`cria-tab-${tab}`} aria-controls="cria-preview-content" aria-selected={activePreview === tab} tabIndex={activePreview === tab ? 0 : -1} className={activePreview === tab ? "is-active" : ""} key={tab} onClick={() => setActivePreview(tab)} onKeyDown={handlePreviewTabKeyDown} disabled={!visiblePreviews.includes(tab)}>
                 {tab === "carousel" ? "Carrossel" : tab === "story" ? "Story" : "Post"}
               </button>
             ))}
@@ -294,7 +440,7 @@ export function CriaStudio() {
 
           <div className="cria-preview-stage">
             <div className="cria-stage-tools"><span>{activePreview === "story" ? "1080 × 1920" : "1080 × 1080"}</span><div><button type="button" aria-label="Diminuir zoom" onClick={() => setZoom((value) => Math.max(56, value - 8))} disabled={zoom === 56}>−</button><b>{zoom}%</b><button type="button" aria-label="Aumentar zoom" onClick={() => setZoom((value) => Math.min(88, value + 8))} disabled={zoom === 88}>+</button></div></div>
-            <div className={`cria-artboard-wrap is-${activePreview}`} style={{ "--cria-preview-scale": zoom / 72 } as CSSProperties}>
+            <div id="cria-preview-content" className={`cria-artboard-wrap is-${activePreview}`} style={{ "--cria-preview-scale": zoom / 72 } as CSSProperties} role="tabpanel" aria-labelledby={`cria-tab-${activePreview}`}>
               {activePreview === "carousel" ? <CarouselCanvas campaign={campaign} /> : <CreativeCanvas variant={activePreview} campaign={campaign} />}
             </div>
           </div>
@@ -307,8 +453,8 @@ export function CriaStudio() {
           </div>
 
           <div className="cria-preview-actions">
-            <button type="button" onClick={() => setNotice("Rascunho salvo neste preview.")}>Salvar rascunho</button>
-            <button type="button" onClick={() => setNotice("Campanha pronta para a etapa de revisão.")}>Revisar campanha <span>→</span></button>
+            <button type="button" onClick={() => setNotice("Persistência de rascunhos será ativada com o Supabase.")}>Salvar rascunho</button>
+            <button type="button" onClick={() => setNotice("O fluxo de revisão será ativado com a persistência de campanhas.")}>Revisar campanha <span>→</span></button>
           </div>
         </aside>
       </main>

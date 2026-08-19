@@ -2,6 +2,7 @@ import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { initialCampaign } from "@/lib/cria";
+import { protectPaidApi, readLimitedJson, safeErrorName } from "@/lib/security/api-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,8 +10,8 @@ export const maxDuration = 60;
 const requestSchema = z.object({
   prompt: z.string().trim().min(12).max(4_000),
   format: z.enum(["campaign", "story", "carousel", "post"]),
-  assetIds: z.array(z.string().min(1)).max(12).default([]),
-});
+  assetIds: z.array(z.string().regex(/^[A-Za-z0-9_-]{1,80}$/)).max(12).default([]),
+}).strict();
 
 const campaignSchema = z.object({
   title: z.string().min(2).max(80),
@@ -29,7 +30,12 @@ function hasGatewayCredentials() {
 }
 
 export async function POST(request: Request) {
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  const accessError = protectPaidApi(request);
+  if (accessError) return accessError;
+
+  const body = await readLimitedJson(request);
+  if (body.error) return body.error;
+  const parsed = requestSchema.safeParse(body.data);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Pedido inválido.", details: parsed.error.flatten() }, { status: 400 });
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ campaign: result.output, mode: "live", model });
   } catch (error) {
-    console.error("crIA campaign generation failed", error);
-    return NextResponse.json({ campaign: initialCampaign, mode: "fallback" });
+    console.error("crIA campaign generation failed", { error: safeErrorName(error) });
+    return NextResponse.json({ error: "Não foi possível gerar a campanha agora." }, { status: 502 });
   }
 }
