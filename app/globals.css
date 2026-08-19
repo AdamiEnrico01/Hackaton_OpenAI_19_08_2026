@@ -349,3 +349,6 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid var(--cria-foc
 /* Clean crIA icon supplied by the brand team. */
 .cria-mark-dot { background: url('/cria-icon-v2.png') center / contain no-repeat !important; border-radius: 0 !important; }
 .cria-image-header .cria-mark-dot { background-image: url('/cria-icon-v2.png') !important; width: 30px; height: 30px; }
+.cria-brand-review { display: grid; gap: 9px; margin: 16px 0; padding: 14px 16px; border: 1px solid #cfe0ff; background: #f3f7ff; color: #66738a; font-size: 11px; }
+.cria-brand-review strong { color: #15203d; font-size: 12px; }
+.cria-brand-review b { color: #1952d1; font-weight: 600; }
