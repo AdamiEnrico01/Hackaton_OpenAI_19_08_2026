@@ -6,7 +6,7 @@ export function LandingPage() {
     <main className="cria-landing">
       <nav className="cria-landing-nav">
         <Link className="cria-landing-mark" href="/" aria-label="crIA início">
-          <span className="cria-mark-dot" />
+          <Image src="/cria-icon-v2.png" alt="" width={30} height={30} />
           <span>cr<span>IA</span></span>
         </Link>
         <div className="cria-landing-nav-links">
