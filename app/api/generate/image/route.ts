@@ -27,13 +27,13 @@ export async function POST(request: Request) {
   }
 
   const model = process.env.CRIA_IMAGE_MODEL ?? "openai/gpt-image-2";
-  const aspectRatio = parsed.data.format === "story" ? "9:16" : "1:1";
+  const size = parsed.data.format === "story" ? "1024x1536" : "1024x1024";
 
   try {
     const result = await generateImage({
       model,
       prompt: parsed.data.prompt,
-      aspectRatio,
+      size,
       providerOptions: {
         gateway: {
           tags: ["feature:image", "product:cria", `format:${parsed.data.format}`],
