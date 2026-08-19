@@ -8,6 +8,14 @@ import { isSafePublicHttpUrl } from "@/lib/security/public-url";
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
+async function directWebsiteFallback(url: string) {
+  const response = await fetch(url, { headers: { "User-Agent": "crIA-brand-reader/1.0" }, signal: AbortSignal.timeout(12_000), cache: "no-store" });
+  if (!response.ok) throw new Error(`site respondeu ${response.status}`);
+  const html = await response.text();
+  const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return [{ source: "website-direct", url, title: text.slice(0, 5000) }];
+}
+
 const inputSchema = z.object({
   websiteUrl: z.url().refine(isSafePublicHttpUrl, "Use uma URL pública HTTP ou HTTPS."),
   instagramUsername: z.string().trim().regex(/^@?[A-Za-z0-9._]{1,30}$/).optional(),
@@ -33,14 +41,17 @@ export async function POST(request: Request) {
     if (parsed.data.instagramUsername) sourceTasks.push(scrapeInstagramProfile(parsed.data.instagramUsername));
     const [websiteResult, instagramResult] = await Promise.allSettled(sourceTasks);
 
-    const website = websiteResult.status === "fulfilled" ? websiteResult.value : [];
+    let website = websiteResult.status === "fulfilled" ? websiteResult.value : [];
+    if (websiteResult.status === "rejected") {
+      try { website = await directWebsiteFallback(parsed.data.websiteUrl); } catch { /* both collectors unavailable */ }
+    }
     const instagram = instagramResult?.status === "fulfilled" ? instagramResult.value : [];
     const warnings = [
       ...(websiteResult.status === "rejected" ? ["Não foi possível coletar o site."] : []),
       ...(instagramResult?.status === "rejected" ? ["Não foi possível coletar o Instagram."] : []),
     ];
 
-    if (websiteResult.status === "rejected" && (!instagramResult || instagramResult.status === "rejected")) {
+    if (website.length === 0 && (!instagramResult || instagramResult.status === "rejected")) {
       return NextResponse.json({ error: "Não foi possível coletar as fontes agora." }, { status: 502 });
     }
 
