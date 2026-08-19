@@ -11,29 +11,32 @@ export function OnboardingFlow() {
   const [instagram, setInstagram] = useState("");
   const [ingestStatus, setIngestStatus] = useState<"idle" | "loading" | "review" | "error">("idle");
   const [ingestError, setIngestError] = useState("");
+  const [brandAnalysis, setBrandAnalysis] = useState<{ companyName?: string; segment?: string; tone?: string[] } | null>(null);
   const router = useRouter();
 
   async function ingestBrand() {
     if (!website.trim() || ingestStatus === "loading") return;
     setIngestStatus("loading");
     setIngestError("");
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    setIngestStatus("review");
-  }
-
-  async function confirmBrand() {
-    setIngestStatus("loading");
-    setIngestError("");
     try {
-      const response = await fetch("/api/brand/ingest", { method: "POST", headers: { "Content-Type": "application/json", ...(process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN ? { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRIA_TEST_TOKEN}` } : {}) }, body: JSON.stringify({ websiteUrl: website.trim(), instagramUsername: instagram.trim().replace(/^@/, "") || undefined }) });
+      const response = await fetch("/api/brand/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteUrl: website.trim(), instagramUsername: instagram.trim().replace(/^@/, "") || undefined }),
+      });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Não foi possível analisar sua marca.");
+      if (!response.ok || !result.analysis) throw new Error(result.error ?? "Não foi possível analisar sua marca.");
+      setBrandAnalysis(result.analysis);
       window.localStorage.setItem("cria-brand-analysis", JSON.stringify(result));
-      router.push("/studio");
+      setIngestStatus("review");
     } catch (error) {
       setIngestStatus("error");
       setIngestError(error instanceof Error ? error.message : "Não foi possível analisar sua marca.");
     }
+  }
+
+  function confirmBrand() {
+    router.push("/studio");
   }
 
   return (
@@ -47,7 +50,7 @@ export function OnboardingFlow() {
             <button type="button" className={choice === "business" ? "is-selected" : ""} onClick={() => setChoice("business")}><span className="cria-choice-icon">↗</span><span><strong>Já tenho um negócio</strong><small>Quero trazer minha marca para dentro</small></span><b>→</b></button>
             <button type="button" className={choice === "identity" ? "is-selected" : ""} onClick={() => setChoice("identity")}><span className="cria-choice-icon cria-choice-spark">✦</span><span><strong>Quero criar minha identidade</strong><small>A crIA me ajuda a descobrir meu jeito</small></span><b>→</b></button>
           </div>
-          {choice === "business" ? <div className="cria-onboarding-fields"><label>Site da empresa <span>obrigatório</span><input value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://seunegocio.com.br" /></label><label>Instagram <span>opcional</span><input value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="@seunegocio" /></label>{ingestStatus === "review" ? <div className="cria-brand-review"><strong>Encontramos uma marca pronta para revisar</strong><span>Nome: <b>Mais do Cacau</b></span><span>Segmento: <b>doces e produtos à base de cacau</b></span><span>Tom: <b>acolhedor · artesanal · próximo</b></span></div> : <p className="cria-field-note">A crIA usa essas fontes para entender sua marca. Você revisa tudo antes de salvar.</p>}{ingestError ? <p className="cria-ingest-error" role="alert">{ingestError}</p> : null}<button className="cria-primary-cta cria-full-cta" type="button" onClick={ingestStatus === "review" ? confirmBrand : ingestBrand} disabled={!website.trim() || ingestStatus === "loading"}>{ingestStatus === "loading" ? <>Analisando sua marca <span>…</span></> : ingestStatus === "review" ? <>Aceitar e continuar <span>→</span></> : <>Continuar <span>→</span></>}</button></div> : null}
+          {choice === "business" ? <div className="cria-onboarding-fields"><label>Site da empresa <span>obrigatório</span><input value={website} onChange={(event) => setWebsite(event.target.value)} placeholder="https://seunegocio.com.br" /></label><label>Instagram <span>opcional</span><input value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="@seunegocio" /></label>{ingestStatus === "review" ? <div className="cria-brand-review"><strong>Encontramos uma marca pronta para revisar</strong><span>Nome: <b>{brandAnalysis?.companyName ?? "Marca identificada"}</b></span><span>Segmento: <b>{brandAnalysis?.segment ?? "Segmento identificado"}</b></span><span>Tom: <b>{brandAnalysis?.tone?.join(" · ") ?? "Tom identificado"}</b></span></div> : <p className="cria-field-note">A crIA usa essas fontes para entender sua marca. Você revisa tudo antes de salvar.</p>}{ingestError ? <p className="cria-ingest-error" role="alert">{ingestError}</p> : null}<button className="cria-primary-cta cria-full-cta" type="button" onClick={ingestStatus === "review" ? confirmBrand : ingestBrand} disabled={!website.trim() || ingestStatus === "loading"}>{ingestStatus === "loading" ? <>Analisando sua marca <span>…</span></> : ingestStatus === "review" ? <>Aceitar e continuar <span>→</span></> : <>Continuar <span>→</span></>}</button></div> : null}
           {choice === "identity" ? <div className="cria-identity-preview"><div><span className="cria-chat-avatar">✦</span><p>Perfeito. Vamos descobrir a marca que já existe dentro da sua ideia.</p></div><Link className="cria-primary-cta cria-full-cta" href="/studio">Conversar com a crIA <span>→</span></Link></div> : null}
           {!choice ? <p className="cria-form-footnote">Sem cartão. Sem compromisso. Só um bom começo.</p> : null}
         </div>
