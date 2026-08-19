@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     ];
 
     if (website.length === 0 && (!instagramResult || instagramResult.status === "rejected")) {
-      return NextResponse.json({ error: "Não foi possível coletar as fontes agora." }, { status: 502 });
+      website = [{ source: "url-context", url: parsed.data.websiteUrl, note: "A coleta automática falhou. Faça uma análise provisória baseada na URL e no nome do domínio, sem inventar evidências." }];
+      warnings.push("Coleta automática indisponível; análise provisória gerada pelo modelo.");
     }
 
     if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
