@@ -57,12 +57,13 @@ export async function POST(request: Request) {
         "Crie conteúdo objetivo, humano e comercial sem clichês, promessas exageradas ou hashtags genéricas.",
         "O conceito deve funcionar como story, carrossel de exatamente 3 páginas e post.",
         "Preserve nomes de produtos, detalhes locais e chamadas para ação fornecidos pelo usuário.",
+        "Nunca invente o nome da empresa, produtos, preços, condições, localização ou credenciais que não estejam no briefing.",
       ].join(" "),
       prompt: [
         `Formato solicitado: ${format}.`,
         `Briefing do usuário: ${prompt}`,
         `Ativos selecionados: ${assetIds.join(", ") || "nenhum"}.`,
-        "Marca de demonstração: Empório Aurora; tom acolhedor, próximo e confiante; público local; cores azul, amarelo e laranja.",
+        "Brandbook persistido: ainda não conectado. Use somente os fatos presentes no briefing e mantenha referências à empresa de forma genérica quando o nome não for informado.",
       ].join("\n"),
       providerOptions: {
         gateway: {
