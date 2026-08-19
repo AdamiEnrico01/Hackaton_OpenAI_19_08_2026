@@ -1,5 +1,5 @@
-import { CriaStudio } from "@/components/cria-studio";
+import { LandingPage } from "@/components/landing-page";
 
 export default function Home() {
-  return <CriaStudio />;
+  return <LandingPage />;
 }

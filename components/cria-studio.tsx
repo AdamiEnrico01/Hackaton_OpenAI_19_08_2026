@@ -305,12 +305,6 @@ export function CriaStudio() {
           ))}
         </nav>
 
-        <div className="cria-brand-health">
-          <div><span>Marca pronta</span><strong>92%</strong></div>
-          <div className="cria-health-track"><i /></div>
-          <small>Seu brandbook está guiando todas as criações.</small>
-        </div>
-
         <div className="cria-user">
           <span>EA</span>
           <div><strong>Empório Aurora</strong><small>Plano Essencial</small></div>
