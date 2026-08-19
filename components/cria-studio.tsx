@@ -25,6 +25,8 @@ const navigation = [
   { label: "Planejamento", icon: "⌁" },
 ];
 
+const mascotUrl = "https://raw.githubusercontent.com/AdamiEnrico01/Hackaton_OpenAI_19_08_2026/11216c62d3a47921e182adbacc1b92c58628e5ce/public/cria-mascot.png";
+
 function AssetPill({ asset, onRemove }: { asset: BrandAsset; onRemove?: () => void }) {
   return (
     <span className={`cria-asset-pill cria-accent-${asset.accent}`}>
@@ -194,7 +196,7 @@ export function CriaStudio() {
             <div className="cria-mascot-stage">
               <span className="cria-speech">Oi! O que vamos<br />colocar no mundo?</span>
               <span className="cria-mascot-glow" />
-              <Image src="/cria-mascot.png" alt="Ararinha azul, mascote da crIA" width={240} height={240} priority />
+              <Image src={mascotUrl} alt="Ararinha azul, mascote da crIA" width={240} height={240} priority />
             </div>
           </div>
 
