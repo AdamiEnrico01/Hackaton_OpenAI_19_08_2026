@@ -20,7 +20,7 @@ async function runActor(actorId: string, input: Record<string, unknown>): Promis
       },
       body: JSON.stringify(input),
       cache: "no-store",
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(35_000),
     },
   );
 
@@ -35,7 +35,7 @@ async function runActor(actorId: string, input: Record<string, unknown>): Promis
 export function crawlCompanyWebsite(websiteUrl: string) {
   return runActor(process.env.APIFY_WEBSITE_ACTOR ?? "apify/website-content-crawler", {
     startUrls: [{ url: websiteUrl }],
-    maxCrawlPages: 12,
+    maxCrawlPages: 4,
   });
 }
 

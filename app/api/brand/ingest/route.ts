@@ -6,7 +6,7 @@ import { protectPaidApi, readLimitedJson, safeErrorName } from "@/lib/security/a
 import { isSafePublicHttpUrl } from "@/lib/security/public-url";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 90;
 
 const inputSchema = z.object({
   websiteUrl: z.url().refine(isSafePublicHttpUrl, "Use uma URL pública HTTP ou HTTPS."),
