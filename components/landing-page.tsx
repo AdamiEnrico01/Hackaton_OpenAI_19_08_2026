@@ -32,7 +32,7 @@ export function LandingPage() {
           <div className="cria-campaign-card">
             <div className="cria-card-top"><span>crIA / campanha 001</span><b>aurora</b></div>
             <div className="cria-card-art"><span className="cria-card-orb cria-card-orb-a" /><span className="cria-card-orb cria-card-orb-b" /><Image src="/cria-mascot.png" alt="Mascote da crIA" width={205} height={205} /></div>
-            <div className="cria-card-copy"><small>torra local · lote novo</small><strong>Sua manhã<br />pede algo<br /><em>especial.</em></strong><span>peça pelo WhatsApp →</span></div>
+            <div className="cria-card-copy"><small>torra local · lote novo</small><strong>Sua marca<br />tem algo para<br /><em>dizer.</em></strong><span>crie conteúdo que combina →</span></div>
           </div>
           <div className="cria-floating-note cria-note-one"><span>01</span><p>entende<br /><b>sua marca</b></p></div>
           <div className="cria-floating-note cria-note-two"><span>02</span><p>cria conteúdo<br /><b>que combina</b></p></div>
