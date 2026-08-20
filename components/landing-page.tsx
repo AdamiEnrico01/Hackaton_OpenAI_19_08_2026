@@ -11,7 +11,7 @@ export function LandingPage() {
         </Link>
         <div className="cria-landing-nav-links">
           <a href="#como-funciona">Como funciona</a>
-          <a href="#para-quem">Para quem é</a>
+          <a href="#como-funciona">Para quem é</a>
         </div>
         <Link className="cria-nav-login" href="/onboarding">Entrar <span>↗</span></Link>
       </nav>

@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         `Formato solicitado: ${format}.`,
         `Briefing do usuário: ${prompt}`,
         `Ativos selecionados: ${assetIds.join(", ") || "nenhum"}.`,
-        "Brandbook persistido: ainda não conectado. Use somente os fatos presentes no briefing e mantenha referências à empresa de forma genérica quando o nome não for informado.",
+        "O briefing pode conter um brandbook operacional. Use esses fatos como contexto da marca e não invente informações ausentes.",
       ].join("\n"),
       providerOptions: {
         gateway: {

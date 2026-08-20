@@ -21,27 +21,27 @@ export type CampaignResult = {
 };
 
 export const availableAssets: BrandAsset[] = [
-  { id: "coffee-500", name: "Café Aurora 500g", kind: "product", icon: "▧", accent: "yellow" },
-  { id: "logo-main", name: "Logo principal", kind: "logo", icon: "A", accent: "orange" },
-  { id: "coffee-250", name: "Café Aurora 250g", kind: "product", icon: "☕", accent: "cyan" },
-  { id: "gift-kit", name: "Kit presente", kind: "product", icon: "◇", accent: "blue" },
+  { id: "product-main", name: "Produto principal", kind: "product", icon: "▧", accent: "yellow" },
+  { id: "logo-main", name: "Logo principal", kind: "logo", icon: "M", accent: "orange" },
+  { id: "product-second", name: "Segundo produto", kind: "product", icon: "◇", accent: "cyan" },
+  { id: "gift-kit", name: "Kit de produtos", kind: "product", icon: "◇", accent: "blue" },
   { id: "logo-mono", name: "Logo monocromático", kind: "logo", icon: "◉", accent: "cyan" },
   { id: "instagram-ref", name: "Referência do Instagram", kind: "reference", icon: "◎", accent: "orange" },
 ];
 
 export const initialCampaign: CampaignResult = {
-  title: "Café Aurora Especial",
-  rationale: "A campanha aproxima o produto da rotina local e transforma a torra fresca no principal motivo para experimentar.",
-  caption: "Tem novidade sendo torrada por aqui. O Café Aurora Especial nasce na nossa cidade e chega fresco à sua xícara — com aroma marcante, doçura equilibrada e aquele convite para começar o dia sem pressa. Disponível a partir desta sexta.",
-  hashtags: ["#CafeEspecial", "#TorraLocal", "#EmporioAurora", "#CompreLocal", "#CafeFresco"],
+  title: "Campanha da sua marca",
+  rationale: "Uma ideia objetiva para apresentar o principal benefício da marca e convidar o público para a próxima ação.",
+  caption: "Uma novidade pensada para quem procura uma escolha local, clara e feita com atenção aos detalhes. Conheça a marca e descubra o que ela preparou para você.",
+  hashtags: ["#NegocioLocal", "#Novidade", "#SuaMarca"],
   pieces: {
-    story: { eyebrow: "torra local · lote novo", headline: "sua manhã pede algo especial.", cta: "peça pelo WhatsApp" },
+    story: { eyebrow: "novidade", headline: "tem coisa boa chegando.", cta: "saiba mais" },
     carousel: [
-      { title: "da nossa cidade", body: "para a sua xícara." },
-      { title: "torra fresca", body: "aroma que chega primeiro." },
-      { title: "sexta tem lote novo", body: "reserve o seu." },
+      { title: "feito por perto", body: "para pessoas de verdade." },
+      { title: "uma escolha clara", body: "com benefício concreto." },
+      { title: "conheça a novidade", body: "fale com a marca." },
     ],
-    post: { eyebrow: "lançamento · sexta", headline: "café novo por aqui.", cta: "conheça o Aurora Especial" },
+    post: { eyebrow: "lançamento", headline: "uma novidade por aqui.", cta: "conheça a marca" },
   },
 };
 
