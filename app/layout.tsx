@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "crIA — seu marketeiro favorito",
   description: "Transforme sua marca em campanhas completas com inteligência artificial.",
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: { icon: "/cria-icon-v2.png", shortcut: "/cria-icon-v2.png" },
 };
 
 export default function RootLayout({
